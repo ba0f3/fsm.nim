@@ -14,6 +14,14 @@ type
 
   TransitionNotFoundException = object of Exception
 
+proc reset*(m: Machine) =
+  m.currentState = some(m.initialState)
+
+proc setInitialState*[S,E](m: Machine[S,E], state: S) =
+  m.initialState = state
+  if m.currentState.isNone:
+    m.reset()
+
 proc newMachine*[S,E](initialState: S): Machine[S,E] =
   result = new(Machine[S,E])
   result.transitions = newTable[StateEvent[S,E], Transition[S]]()
@@ -51,19 +59,12 @@ proc getTransition*[S,E](m: Machine[S,E], event: E, state: S): Transition[S] =
 proc getCurrentState*(m: Machine): auto =
   m.currentState.get
 
-proc reset*(m: Machine) =
-  m.currentState = some(m.initialState)
-
-proc setInitialState*[S,E](m: Machine[S,E], state: S) =
-  m.initialState = state
-  if m.currentState.isNone:
-    m.reset()
-
 proc process*[S,E](m: Machine[S,E], event: E) =
   let transition = m.getTransition(event, m.currentState.get)
   if transition[1].isSome:
     get(transition[1])()
   m.currentState = some(transition[0])
+  #echo event, " ", m.currentState.get
 
 
 when isMainModule:
